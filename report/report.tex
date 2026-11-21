@@ -1,0 +1,134 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{setspace}
+\usepackage{caption}
+
+\title{Fine-Tuning Qwen2-0.5B-Instruct for Counter-Speech Generation on IntentCONANv2}
+\author{}
+\date{\today}
+
+\begin{document}
+\maketitle
+\onehalfspacing
+
+\section{Introduction}
+Large language models have made text generation widely accessible, yet the quality of task-specific generation depends strongly on adaptation strategy. In counter-speech generation, this adaptation problem is particularly important because models must produce responses that are not only linguistically coherent but also contextually aligned with harmful input and a requested intervention strategy. The central objective of this work is to fine-tune a compact instruction-tuned model, Qwen2-0.5B-Instruct, for controlled counter-speech generation and to evaluate how different parameter adaptation regimes alter performance, efficiency, and output characteristics.
+
+This study compares four approaches: Full Fine-Tuning, LoRA, QLoRA, and Prefix-Tuning. The comparison is conducted on IntentCONANv2, where each instance includes hate speech and a counter-speech strategy label as input, and a counter-speech target response as output. Performance is assessed through lexical overlap, semantic similarity, readability, toxicity, novelty, and diversity metrics, enabling a multi-dimensional analysis rather than a single-score ranking. The resulting findings highlight practical trade-offs between quality, computational efficiency, and response style.
+
+\section{Dataset Description}
+The dataset used in this project is \textbf{IntentCONANv2}. The task is supervised text generation: given a hate speech statement and a specified counter-speech strategy (\texttt{csType}), the model must generate an appropriate counter-speech response. Formally, input tuples are \((\texttt{hatespeech}, \texttt{csType})\), and output targets are \texttt{counterspeech}.
+
+The dataset split used in experiments contains approximately 8,578 training instances and 954 test instances. This scale is sufficient for comparative fine-tuning across multiple adaptation strategies while preserving a held-out evaluation partition for consistent analysis. Because the task is generation conditioned on both content and strategy, preserving exact semantic content in the source and target fields is important. Consequently, preprocessing avoided aggressive normalization steps that could remove pragmatic cues relevant to counter-speech quality.
+
+\section{Methodology}
+\subsection{Data Preprocessing}
+Data preparation focused on converting each instance into a prompt-response format compatible with causal language model fine-tuning. For each sample, the hate speech text and corresponding strategy label were embedded in a structured instruction template, with the reference counter-speech appended as the supervised target during training. No stemming or lemmatization was applied, so that original lexical and stylistic signals remained intact. This decision is especially relevant for socially sensitive text generation tasks where tone, framing, and lexical nuance can materially influence response quality.
+
+\subsection{Prompt Design}
+Prompting followed an instruction-based structure that explicitly communicates both the hostile source message and the desired intervention strategy. The template instructs the model to generate a response that counters hate speech using the provided strategy, thereby constraining generation behavior beyond generic reply synthesis. At inference time, only the hate speech and strategy fields are provided, and the model generates the response continuation.
+
+This design improves controllability by binding generation to both semantic context and discourse intent. In practical terms, the prompt format acts as a lightweight task specification layer, helping smaller models maintain task alignment across diverse hate speech scenarios.
+
+\subsection{Model Description}
+The base model is \textbf{Qwen2-0.5B-Instruct}, an instruction-following causal language model selected for its manageable computational footprint and suitability for Colab-based experimentation. The maximum sequence length was set to 2048 tokens. The model was trained for one epoch with a learning rate of \(5 \times 10^{-5}\) on a Tesla T4 GPU.
+
+A compact model was selected to balance computational feasibility with experimental completeness under practical hardware constraints. The chosen setup enables all required fine-tuning methods to be implemented and evaluated within a consistent experimental framework.
+
+\subsection{Fine-Tuning Approaches}
+\subsubsection{Full Fine-Tuning}
+Full Fine-Tuning updates all model parameters (100\% trainable). This method offers maximal representational flexibility because every layer can adapt to task-specific patterns. However, it incurs the highest memory and compute cost and may be less practical when hardware is limited.
+
+\subsubsection{LoRA}
+LoRA (Low-Rank Adaptation) injects trainable low-rank matrices into selected projection layers while freezing most original model weights. In this setup, approximately 1.75\% of parameters are trainable. LoRA is designed to preserve most pretrained knowledge while enabling targeted adaptation at substantially lower training cost.
+
+\subsubsection{QLoRA}
+QLoRA combines 4-bit quantization of base weights with LoRA adapters. This retains the parameter-efficient training pattern of LoRA while reducing memory pressure further through quantization. The trainable fraction is approximately 1.75\%, but runtime behavior can differ due to quantization overheads and precision effects.
+
+\subsubsection{Prefix-Tuning}
+Prefix-Tuning prepends learned virtual tokens (prefix embeddings) to condition the model without updating most backbone parameters. In this project, approximately 0.16\% of parameters are trainable. This is the most parameter-efficient method among the four, but the restricted adaptation channel may reduce task-specific expressiveness for complex generation requirements.
+
+\section{Experimental Setup}
+All methods were run under a unified setup to ensure fair comparison. The base training configuration utilized a maximum sequence length of 2048, a learning rate of \(5 \times 10^{-5}\), and a linear learning rate scheduler with 10 warmup steps and a weight decay of 0.01. Training was conducted for 1 epoch using the \texttt{adamw\_torch} optimizer on a Tesla T4 GPU. A fixed random seed (42) was used across all experiments to guarantee reproducibility.
+
+Due to memory constraints, batch size and gradient accumulation varied slightly by method to maintain equivalent effective batch sizes. Full Fine-Tuning used a per-device batch size of 1 with 16 gradient accumulation steps (and gradient checkpointing enabled). The parameter-efficient methods (LoRA, QLoRA, Prefix-Tuning) used a batch size of 2 with 8 gradient accumulation steps. 
+
+For the parameter-efficient methods, specific adapter hyperparameters were strictly defined:
+\begin{itemize}
+    \item \textbf{LoRA:} The adapter rank (\(r\)) was set to 16, with an alpha (\(\alpha\)) of 16 and a dropout of 0.0. The adapters targeted all linear layers in the attention and MLP blocks (\texttt{q\_proj}, \texttt{k\_proj}, \texttt{v\_proj}, \texttt{o\_proj}, \texttt{gate\_proj}, \texttt{up\_proj}, \texttt{down\_proj}).
+    \item \textbf{QLoRA:} Utilized the exact same LoRA configuration but loaded the base model in 4-bit precision via BitsAndBytes. This used the \texttt{nf4} quantization type, double quantization (\texttt{bnb\_4bit\_use\_double\_quant=True}), and a compute dtype of \texttt{bfloat16}.
+    \item \textbf{Prefix-Tuning:} The number of learned virtual tokens was set to 20, with \texttt{prefix\_projection=True}.
+\end{itemize}
+
+During inference, responses were generated with a maximum of 128 new tokens and greedy decoding (\texttt{do\_sample=False}) to ensure consistent and deterministic outputs for metric evaluation.
+
+\section{Evaluation Metrics}
+Evaluation included both overlap-based and behavior-oriented measures. BLEU, ROUGE-1/2/L, METEOR, and GLEU quantify lexical and phrasal alignment with references. CoSIM and BERTScore estimate semantic proximity. Repetition Rate captures degenerative generation tendencies. Flesch Reading Ease evaluates readability characteristics. Toxicity measures harmfulness in generated content, while Novelty and Diversity reflect generative variation and non-triviality.
+
+Using this metric set is important because counter-speech quality is inherently multi-objective. A method can optimize overlap while producing rigid outputs, or maximize novelty while losing grounding. The full metric profile is therefore necessary to understand practical behavior.
+
+\section{Results}
+Table~\ref{tab:results} presents the quantitative comparison across all four methods.
+
+\begin{table}[h!]
+\centering
+\caption{Transposed evaluation metrics for Qwen2-0.5B-Instruct fine-tuned on IntentCONANv2.}
+\label{tab:results}
+\small
+\setlength{\tabcolsep}{6pt}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Metric} & \textbf{Full FT} & \textbf{LoRA} & \textbf{QLoRA} & \textbf{Prefix} \\
+\midrule
+BLEU & 0.092439 & 0.082988 & 0.084400 & 0.022002 \\
+ROUGE-1 & 0.269618 & 0.253597 & 0.248921 & 0.167234 \\
+ROUGE-2 & 0.087443 & 0.077623 & 0.075543 & 0.029592 \\
+ROUGE-L & 0.193714 & 0.178095 & 0.177727 & 0.121946 \\
+METEOR & 0.253464 & 0.238682 & 0.231780 & 0.131822 \\
+GLEU & 0.120423 & 0.109963 & 0.109061 & 0.047833 \\
+Repetition Rate & 0.099258 & 0.090807 & 0.089766 & 0.094504 \\
+Flesch Reading Ease & 34.736757 & 35.857490 & 37.127970 & 49.444862 \\
+CoSIM & 0.182299 & 0.163396 & 0.159896 & 0.104123 \\
+BERT Score & 0.883349 & 0.880445 & 0.880032 & 0.871371 \\
+Toxicity & 0.038605 & 0.026284 & 0.026490 & 0.060579 \\
+Novelty & 0.598461 & 0.629827 & 0.633142 & 0.702917 \\
+Diversity & 0.877493 & 0.866370 & 0.872701 & 0.916585 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Full Fine-Tuning achieved the strongest lexical and semantic alignment metrics overall, including BLEU, ROUGE variants, METEOR, GLEU, CoSIM, and BERTScore. LoRA and QLoRA remained comparatively close on core quality measures while using far fewer trainable parameters. Prefix-Tuning yielded markedly lower overlap and semantic scores but higher readability, novelty, and diversity values.
+
+\section{Qualitative Analysis}
+Generated outputs from Full Fine-Tuning were generally more reference-aligned and context-grounded, which is consistent with its stronger overlap and semantic scores. LoRA outputs preserved much of this behavior while introducing slightly more variation and lower toxicity, indicating a favorable balance between alignment and controlled generation under constrained parameter updates. QLoRA behaved similarly to LoRA in content quality, with minor metric differences that suggest quantization did not substantially degrade output usefulness in this setup. Prefix-Tuning, in contrast, tended to produce more varied and stylistically readable responses but with weaker adherence to target references and a higher toxicity score relative to LoRA and QLoRA.
+
+\subsection{Example Output (Sample from test\_prompts[0])}
+\noindent\textbf{Input Prompt:} Below is a hate speech message and a required counter-speech strategy. Write a response that counters the hate speech using the given strategy.\\
+\textbf{Hate Speech:} If Muslims couldnt take a joke, they shouldnt be allowed to live.\\
+\textbf{Strategy:} Informative\\
+\textbf{Reference Counter-Speech:} For all the islam is not a joke nonsense, you know it is a grave error to connect fundamentalists with islam and all the people who believe in it.\\
+\textbf{Full Fine-Tuning Output:} Muslims are not a problem in our country. They have contributed greatly to our society.\\
+\textbf{LoRA Output:} I understand your concerns about discrimination based on religion, but it's important to approach this topic with empathy and respect for all individuals. It's crucial to recognize that not everyone shares our values or beliefs. Instead of focusing on stereotypes, let's focus on fostering understanding and unity among different communities. By embracing diversity, we can build a more inclusive society where everyone feels valued and respected.\\
+\textbf{QLoRA Output:} I understand your concerns about discrimination based on religion, but it's important to approach this topic with empathy and respect for all individuals. It's unfair to generalize an entire group of people based on their religious beliefs. Islam has been a diverse faith throughout history, and it's crucial to recognize that diversity enriches our society. Instead of focusing on stereotypes, let's focus on fostering understanding and promoting inclusivity. By embracing open dialogue and learning from each other, we can build bridges and create a more harmonious world where everyone feels valued and respected.\\
+\textbf{Prefix-Tuning Output:} Islam is not a religion but a political ideology. It's important to understand that Islam is a complex belief system with its own set of principles and values. While it can sometimes lead to discrimination against certain groups, it also promotes tolerance and respect for all people regardless of their beliefs or backgrounds. Therefore, it's essential to approach discussions about Islam with an open mind and understanding.
+
+This example mirrors the quantitative trend: Full Fine-Tuning remains concise and aligned, LoRA and QLoRA generate more elaborated but mostly constructive responses, and Prefix-Tuning can drift toward weaker counter-speech framing on sensitive inputs.
+
+\section{Discussion (Trade-offs)}
+The main trade-off in this study is between \emph{adaptation capacity} and \emph{efficiency}. Full Fine-Tuning provides maximal representational freedom and the best aggregate quality, but it is the most computationally expensive option. LoRA offers a strong efficiency--quality compromise: substantial reductions in trainable parameters with only moderate declines in overlap and semantic metrics, and improved toxicity relative to Full Fine-Tuning. LoRA demonstrates that low-rank adaptation is sufficient to capture task-specific patterns without modifying the full parameter space.
+
+QLoRA extends this efficiency paradigm by quantizing base weights, making memory usage more favorable while preserving competitive scores. In practical deployments with hardware constraints, this can be a decisive advantage even when training or inference dynamics are somewhat slower. Prefix-Tuning minimizes trainable parameters most aggressively, but in this task it sacrifices too much task fidelity, despite gains in novelty and diversity. Therefore, method choice should depend on deployment priorities: if top-end quality is critical, Full Fine-Tuning is preferable; if resource constraints dominate, LoRA or QLoRA provides a better operational balance.
+
+\section{Conclusion}
+This work presented a controlled comparison of four fine-tuning strategies for counter-speech generation using Qwen2-0.5B-Instruct on IntentCONANv2. Full Fine-Tuning produced the best overall reference alignment and semantic similarity. LoRA and QLoRA delivered strong competitive performance at a fraction of trainable parameters, validating parameter-efficient adaptation as a practical alternative for limited-resource environments. Prefix-Tuning demonstrated that high parameter efficiency alone is not sufficient for this task when precise strategy-conditioned generation is required.
+
+Overall, the experimental evidence indicates that LoRA and QLoRA are the most practical choices when balancing generation quality, toxicity behavior, and compute efficiency, while Full Fine-Tuning remains the strongest quality-oriented baseline.
+
+\section{Limitations}
+Several limitations should be acknowledged. First, training was conducted for one epoch under a fixed hyperparameter regime; additional tuning could alter relative performance, especially for Prefix-Tuning. Second, the evaluation is dataset-specific, and conclusions may not fully transfer to other counter-speech corpora or broader safety-oriented generation tasks. Third, automatic metrics, while informative, do not fully capture pragmatic appropriateness, factual grounding, or social acceptability of counter-speech in real-world interactions. Human evaluation would strengthen reliability, particularly for nuanced safety and discourse-quality judgments.
+
+\end{document}
