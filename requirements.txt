@@ -1,0 +1,16 @@
+torch
+transformers
+datasets
+peft
+accelerate
+bitsandbytes
+pandas
+numpy
+tqdm
+scikit-learn
+evaluate
+rouge-score
+nltk
+bert-score
+textstat
+detoxify
