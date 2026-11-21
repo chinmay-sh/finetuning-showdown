@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="430" viewBox="0 0 880 430" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif">
+<style>
+  .bg{fill:#fcfcfb} .t1{fill:#0b0b0b} .t2{fill:#52514e} .grid{stroke:#e4e3df}
+  .s1{fill:#2a78d6} .s2{fill:#eb6834} .s3{fill:#1baf7a} .s4{fill:#eda100}
+  @media (prefers-color-scheme: dark) {
+    .bg{fill:#1a1a19} .t1{fill:#f0efec} .t2{fill:#c3c2b7} .grid{stroke:#3a3936}
+    .s1{fill:#3987e5} .s2{fill:#d95926} .s3{fill:#199e70} .s4{fill:#c98500}
+  }
+</style>
+<rect class="bg" width="100%" height="100%" rx="12"/>
+<text class="t1" x="24" y="34" font-size="17" font-weight="600">Quality vs. cost of each fine-tuning method</text>
+<rect class="s1" x="24" y="48" width="12" height="12" rx="3"/><text class="t2" x="42" y="58" font-size="13">Full FT</text>
+<rect class="s2" x="120" y="48" width="12" height="12" rx="3"/><text class="t2" x="138" y="58" font-size="13">LoRA</text>
+<rect class="s3" x="192" y="48" width="12" height="12" rx="3"/><text class="t2" x="210" y="58" font-size="13">QLoRA</text>
+<rect class="s4" x="272" y="48" width="12" height="12" rx="3"/><text class="t2" x="290" y="58" font-size="13">Prefix</text>
+<text class="t1" x="24" y="94" font-size="14" font-weight="600">ROUGE-L<tspan class="t2" font-weight="400" font-size="12">  ·  higher is better</tspan></text>
+<line class="grid" x1="94" x2="94" y1="106" y2="224" stroke-width="1"/>
+<text class="t2" x="84" y="125" font-size="13" text-anchor="end">Full FT</text><path class="s1" d="M94,110 H340.0 Q344.0,110 344.0,114 V126 Q344.0,130 340.0,130 H94 Z"/><text class="t1" x="352.0" y="125" font-size="13">0.194</text>
+<text class="t2" x="84" y="155" font-size="13" text-anchor="end">LoRA</text><path class="s2" d="M94,140 H319.3814432989691 Q323.3814432989691,140 323.3814432989691,144 V156 Q323.3814432989691,160 319.3814432989691,160 H94 Z"/><text class="t1" x="331.3814432989691" y="155" font-size="13">0.178</text>
+<text class="t2" x="84" y="185" font-size="13" text-anchor="end">QLoRA</text><path class="s3" d="M94,170 H319.3814432989691 Q323.3814432989691,170 323.3814432989691,174 V186 Q323.3814432989691,190 319.3814432989691,190 H94 Z"/><text class="t1" x="331.3814432989691" y="185" font-size="13">0.178</text>
+<text class="t2" x="84" y="215" font-size="13" text-anchor="end">Prefix</text><path class="s4" d="M94,200 H247.2164948453608 Q251.2164948453608,200 251.2164948453608,204 V216 Q251.2164948453608,220 247.2164948453608,220 H94 Z"/><text class="t1" x="259.2164948453608" y="215" font-size="13">0.122</text>
+<text class="t1" x="444" y="94" font-size="14" font-weight="600">Toxicity<tspan class="t2" font-weight="400" font-size="12">  ·  lower is better</tspan></text>
+<line class="grid" x1="514" x2="514" y1="106" y2="224" stroke-width="1"/>
+<text class="t2" x="504" y="125" font-size="13" text-anchor="end">Full FT</text><path class="s1" d="M514,110 H669.8360655737705 Q673.8360655737705,110 673.8360655737705,114 V126 Q673.8360655737705,130 669.8360655737705,130 H514 Z"/><text class="t1" x="681.8360655737705" y="125" font-size="13">0.039</text>
+<text class="t2" x="504" y="155" font-size="13" text-anchor="end">LoRA</text><path class="s2" d="M514,140 H616.5573770491803 Q620.5573770491803,140 620.5573770491803,144 V156 Q620.5573770491803,160 616.5573770491803,160 H514 Z"/><text class="t1" x="628.5573770491803" y="155" font-size="13">0.026</text>
+<text class="t2" x="504" y="185" font-size="13" text-anchor="end">QLoRA</text><path class="s3" d="M514,170 H616.5573770491803 Q620.5573770491803,170 620.5573770491803,174 V186 Q620.5573770491803,190 616.5573770491803,190 H514 Z"/><text class="t1" x="628.5573770491803" y="185" font-size="13">0.026</text>
+<text class="t2" x="504" y="215" font-size="13" text-anchor="end">Prefix</text><path class="s4" d="M514,200 H760.0 Q764.0,200 764.0,204 V216 Q764.0,220 760.0,220 H514 Z"/><text class="t1" x="772.0" y="215" font-size="13">0.061</text>
+<text class="t1" x="24" y="264" font-size="14" font-weight="600">Training time, 1 epoch on T4<tspan class="t2" font-weight="400" font-size="12">  ·  minutes</tspan></text>
+<line class="grid" x1="94" x2="94" y1="276" y2="394" stroke-width="1"/>
+<text class="t2" x="84" y="295" font-size="13" text-anchor="end">Full FT</text><path class="s1" d="M94,280 H340.0 Q344.0,280 344.0,284 V296 Q344.0,300 340.0,300 H94 Z"/><text class="t1" x="352.0" y="295" font-size="13">40 min</text>
+<text class="t2" x="84" y="325" font-size="13" text-anchor="end">LoRA</text><path class="s2" d="M94,310 H253.58024691358025 Q257.58024691358025,310 257.58024691358025,314 V326 Q257.58024691358025,330 253.58024691358025,330 H94 Z"/><text class="t1" x="265.58024691358025" y="325" font-size="13">26 min</text>
+<text class="t2" x="84" y="355" font-size="13" text-anchor="end">QLoRA</text><path class="s3" d="M94,340 H336.2962962962963 Q340.2962962962963,340 340.2962962962963,344 V356 Q340.2962962962963,360 336.2962962962963,360 H94 Z"/><text class="t1" x="348.2962962962963" y="355" font-size="13">40 min</text>
+<text class="t2" x="84" y="385" font-size="13" text-anchor="end">Prefix</text><path class="s4" d="M94,370 H208.5185185185185 Q212.5185185185185,370 212.5185185185185,374 V386 Q212.5185185185185,390 208.5185185185185,390 H94 Z"/><text class="t1" x="220.5185185185185" y="385" font-size="13">19 min</text>
+<text class="t1" x="444" y="264" font-size="14" font-weight="600">GPU memory reserved<tspan class="t2" font-weight="400" font-size="12">  ·  GB</tspan></text>
+<line class="grid" x1="514" x2="514" y1="276" y2="394" stroke-width="1"/>
+<text class="t2" x="504" y="295" font-size="13" text-anchor="end">Full FT</text><path class="s1" d="M514,280 H760.0 Q764.0,280 764.0,284 V296 Q764.0,300 760.0,300 H514 Z"/><text class="t1" x="772.0" y="295" font-size="13">5.3 GB</text>
+<text class="t2" x="504" y="325" font-size="13" text-anchor="end">LoRA</text><path class="s2" d="M514,310 H652.8571428571429 Q656.8571428571429,310 656.8571428571429,314 V326 Q656.8571428571429,330 652.8571428571429,330 H514 Z"/><text class="t1" x="664.8571428571429" y="325" font-size="13">3.0 GB</text>
+<text class="t2" x="504" y="355" font-size="13" text-anchor="end">QLoRA</text><path class="s3" d="M514,340 H630.3007518796992 Q634.3007518796992,340 634.3007518796992,344 V356 Q634.3007518796992,360 630.3007518796992,360 H514 Z"/><text class="t1" x="642.3007518796992" y="355" font-size="13">2.6 GB</text>
+<text class="t2" x="504" y="385" font-size="13" text-anchor="end">Prefix</text><path class="s4" d="M514,370 H653.796992481203 Q657.796992481203,370 657.796992481203,374 V386 Q657.796992481203,390 653.796992481203,390 H514 Z"/><text class="t1" x="665.796992481203" y="385" font-size="13">3.1 GB</text>
+</svg>
